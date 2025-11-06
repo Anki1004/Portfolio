@@ -132,6 +132,74 @@
           border-top-left-radius: 1rem;
           border-top-right-radius: 1rem;
         }
+
+        /* Modal / Lightbox for Certificate images */
+        .cert-modal {
+            position: fixed;
+            inset: 0;
+            display: none; /* hidden by default */
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(6px);
+        }
+        .cert-modal.show {
+            display: flex;
+        }
+        .cert-modal__overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(2,6,23,0.75);
+        }
+        .cert-modal__content {
+            position: relative;
+            max-width: min(90vw, 900px);
+            max-height: 90vh;
+            padding: 1rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2010;
+            outline: none;
+        }
+        .cert-modal__img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            background: white;
+            display: block;
+        }
+        .cert-modal__close {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 40px;
+            height: 40px;
+            background: #0b1220;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2020;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.06);
+        }
+        .cert-modal__caption {
+            margin-top: 0.75rem;
+            text-align: center;
+            color: #e6eef8;
+        }
+        /* Make certificate thumbnails clearly clickable */
+        #certificates img {
+            cursor: zoom-in;
+            transition: transform 0.18s ease;
+        }
+        #certificates img:hover {
+            transform: scale(1.03);
+        }
     </style>
 </head>
 
@@ -760,6 +828,16 @@ document.addEventListener('DOMContentLoaded', function () {
         </main>
     </div>
 
+        <!-- Certificate Modal / Lightbox -->
+        <div id="certModal" class="cert-modal" role="dialog" aria-hidden="true" aria-labelledby="certModalCaption">
+            <div class="cert-modal__overlay" tabindex="-1"></div>
+            <div class="cert-modal__content" role="document">
+                <button class="cert-modal__close" aria-label="Close certificate preview">✕</button>
+                <img class="cert-modal__img" src="" alt="Certificate preview">
+                <div id="certModalCaption" class="cert-modal__caption"></div>
+            </div>
+        </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.4/dist/locomotive-scroll.min.js"></script>
@@ -789,6 +867,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             initPage();
                         }
                     });
+
                 }
             }, 50);
 
@@ -885,6 +964,84 @@ document.addEventListener('DOMContentLoaded', function () {
             const mobileMenu = document.getElementById('mobile-menu');
             mobileMenuButton.addEventListener('click', () => {
                 mobileMenu.classList.toggle('hidden');
+            });
+        });
+
+        // Certificate Modal Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all certificate cards
+            const certificateCards = document.querySelectorAll('.certificate-card');
+            const modal = document.getElementById('certModal');
+            const modalImg = modal.querySelector('.cert-modal__img');
+            const modalCaption = document.getElementById('certModalCaption');
+            const closeBtn = modal.querySelector('.cert-modal__close');
+            const overlay = modal.querySelector('.cert-modal__overlay');
+
+            // Add click handlers to all certificate images
+            certificateCards.forEach(card => {
+                const img = card.querySelector('img');
+                const title = card.querySelector('h3').textContent;
+                const issuer = card.querySelector('.text-blue-400, .text-purple-400, .text-emerald-400, .text-rose-400, .text-amber-400, .text-indigo-400, .text-cyan-400, .text-red-400').textContent;
+
+                img.addEventListener('click', function() {
+                    modalImg.src = this.src;
+                    modalCaption.textContent = `${title} - ${issuer}`;
+                    modal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+
+                    // Add zoom animation
+                    gsap.fromTo(modalImg, 
+                        {scale: 0.5, opacity: 0},
+                        {scale: 1, opacity: 1, duration: 0.5, ease: "back.out"}
+                    );
+                });
+            });
+
+            // Close modal handlers
+            [closeBtn, overlay].forEach(el => {
+                el.addEventListener('click', closeModal);
+            });
+
+            // Close on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.classList.contains('show')) {
+                    closeModal();
+                }
+            });
+
+            function closeModal() {
+                gsap.to(modalImg, {
+                    scale: 0.5,
+                    opacity: 0,
+                    duration: 0.3,
+                    onComplete: () => {
+                        modal.classList.remove('show');
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+
+            // Add hover effects to certificates
+            certificateCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    gsap.to(this, {
+                        y: -10,
+                        rotateY: 6,
+                        scale: 1.03,
+                        duration: 0.4,
+                        ease: "power2.out"
+                    });
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    gsap.to(this, {
+                        y: 0,
+                        rotateY: 0,
+                        scale: 1,
+                        duration: 0.4,
+                        ease: "power2.out"
+                    });
+                });
             });
         });
     </script>
